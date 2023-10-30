@@ -2,7 +2,45 @@ import math
 import random
 import os
 
+def initializePopulation():
+    population = []
+    for _ in range(POPULATION_SIZE):
+        chromosome = ""
+        for _ in range(CHROMOSOME_LENGTH):
+            chromosome += str(random.randint(0,1))
+        population.append(chromosome)
+    return population
+
+def fitnessCalculation(decoded_population):
+    fitness_of_population = []
+    a = 0.000000001
+    for individual in decoded_population:
+        x1 = individual[0]
+        x2 = individual[1]
+        fitness_of_population.append(-1/(-(math.sin(x1) * - math.cos(x2) + (4/5) * math.exp(1 - (x1**2 + x2 ** 2) ** 0.5)) + a) )
+    return fitness_of_population
+
+def parentSelection(fitness_of_population, population):
+    sorted_fitness = sorted(fitness_of_population)
+
+    # collect 2 largest fitness  
+    return population[fitness_of_population.index(sorted_fitness[-1])], population[fitness_of_population.index(sorted_fitness[-2])]
+
+def decodeChromosomeToIndividual(population):
+    alpha = 0.0
+    beta_x1 = 0.0
+    beta_x2 = 0.0
+
+    decoded_population = []
+    for chromosome in population:
+        for i in range(CHROMOSOME_LENGTH // 2):
+            alpha += 2**(-(i + 1))
+            beta_x1 += int(chromosome[i]) * 2**(-(i + 1))
+            beta_x2 += int(chromosome[i + CHROMOSOME_LENGTH//2 - 1]) * 2**(-(i + 1))
+        decoded_population.append((LOWER_LIMIT + (UPPER_LIMIT - LOWER_LIMIT) / alpha * beta_x1, LOWER_LIMIT + (UPPER_LIMIT - LOWER_LIMIT) / alpha * beta_x2))
     
+    return decoded_population #Rumus Sesuai Buku
+
 def recombination(parent1,parent2):
     
     #Uniform Crossover
@@ -22,15 +60,19 @@ def recombination(parent1,parent2):
 
 def mutation(child1, child2):
 
-    mutated_child_list = [child1 , child2]
+    mutated_child_list = [list(child1), list(child2)] # Convert the strings to lists
 
-    for _, iter_child in mutated_child_list:
-        for gen ,iter_gen in range(CHROMOSOME_LENGTH):
-            if random.uniform(0,1) < POSSIBLE_MUTATION:
-                mutated_child_list[iter_child][iter_gen] = str(int[gen] + 1 % 2)
+    for iter_child in range(2):
+        for iter_gen in range(CHROMOSOME_LENGTH):
+            if random.uniform(0, 1) < POSSIBLE_MUTATION:
+                # Flip the bit: 0 to 1 or 1 to 0
+                mutated_child_list[iter_child][iter_gen] = str(int(mutated_child_list[iter_child][iter_gen]) ^ 1)
 
-    return mutated_child_list[0], mutated_child_list[1]
-            
+    # Convert the lists back to strings
+    mutated_child1 = ''.join(mutated_child_list[0])
+    mutated_child2 = ''.join(mutated_child_list[1])
+
+    return mutated_child1, mutated_child2          
 
 def exchangePopulation(population, fitness_of_population, child1, child2):
     new_population = population
@@ -39,126 +81,74 @@ def exchangePopulation(population, fitness_of_population, child1, child2):
     sorted_fitness_of_old_population = sorted(fitness_of_population)
 
     for i in range(2):
-        for j in range(-1, -POPULATION_SIZE - 1, 1):
-            if sorted_fitness_of_old_population(j) < fitness_of_new_generation[i]:
+        for j in range(-1, -POPULATION_SIZE - 1, -1):
+            if fitness_of_new_generation[i] > sorted_fitness_of_old_population[j]:
                 new_population[fitness_of_population.index(sorted_fitness_of_old_population[j])] = new_generation[i]
                 break
 
     return new_population
 
-def decodeChromosomeToIndividual(population):
-    alpha = 0.0
-    beta_x1 = 0.0
-    beta_x2 = 0.0
-
-    decoded_population = []
-    for chromosome in population:
-        for i in range(CHROMOSOME_LENGTH // 2):
-            alpha += 2**(-(i + 1))
-            beta_x1 += int(chromosome[i]) * 2**(-(i + 1))
-            beta_x2 += int(chromosome[i + CHROMOSOME_LENGTH//2 - 1]) * 2**(-(i + 1))
-            print(int(chromosome[i]), int(chromosome[CHROMOSOME_LENGTH//2 + i]))
-            print(alpha)
-        print()
-        decoded_population.append((LOWER_LIMIT + (UPPER_LIMIT - LOWER_LIMIT) / alpha * beta_x1, LOWER_LIMIT + (UPPER_LIMIT - LOWER_LIMIT) / alpha * beta_x2))
-    return decoded_population #Rumus Sesuai Buku
-
-
-
-def initializePopulation():
-    population = []
-    for _ in range(POPULATION_SIZE):
-        chromosome = ""
-        for _ in range(CHROMOSOME_LENGTH):
-            chromosome += str(random.randint(0,1))
-        population.append(chromosome)
-    return population
-
-
-def fitnessCalculation(decoded_population):
-    fitness_of_population = []
-    a = 0.01
-    for individual in decoded_population:
-        x1 = individual[0]
-        x2 = individual[1]
-        fitness_of_population.append(1/(-(math.sin(x1) * - math.cos(x2) + 4/5 * math.exp(1 - (x1**2 + x2 ** 2) ** 0.5))) + a)
-    return fitness_of_population
-
-def parentSelection(fitness_of_population, population):
-    sorted_fitness = sorted(fitness_of_population)
-
-    # collect 2 largest fitness  
-    return population[fitness_of_population.index(sorted_fitness[-1]), fitness_of_population.index(sorted_fitness[-2]) ]
 
 def main():
     global LOWER_LIMIT, UPPER_LIMIT, POPULATION_SIZE, CHROMOSOME_LENGTH, POSSIBLE_MUTATION
     LOWER_LIMIT = -10
     UPPER_LIMIT = 10
-    POPULATION_SIZE = 2
-    CHROMOSOME_LENGTH = 8
-    POSSIBLE_MUTATION = 1 / (20 * 8)
+    POPULATION_SIZE = 1000
+    CHROMOSOME_LENGTH = 200
+    POSSIBLE_MUTATION = 1 / (POPULATION_SIZE * CHROMOSOME_LENGTH)
 
-    limitation_of_change = 3000
+    limitation_of_change = 100
     change_credit = 0
     generation = 0
     best_fitness = float('-inf')
     best_individual = ""
 
     population = initializePopulation()
-    print(population)
 
     while change_credit <= limitation_of_change:
+        # print(f'population: {population}\n')
+
         # Decode Cromosom to individual
         decoded_population = decodeChromosomeToIndividual(population)
-
+        # print(f'decoded_population: {decoded_population}\n')
+        
         # Fitness Calculation
         fitness_of_population = fitnessCalculation(decoded_population)
+        # print(f'fitness_of_population: {fitness_of_population}\n')
 
         # Parent Selection
         parent1, parent2 = parentSelection(fitness_of_population, population)
+        # print(f'parent1, parent2: {parent1, parent2}\n')
 
         # Recombination
         child1, child2 = recombination(parent1,parent2)
+        # print(f'child1, child2: {child1, child2}\n')
         
         # permutation
         mutated_child1, mutated_child2 = mutation(child1, child2)
+        # print(f'mutated_child1, mutated_child2: {mutated_child1, mutated_child2}\n')
 
-        # Exchange Population
+        #Exchange Population
         population = exchangePopulation(population, fitness_of_population, mutated_child1, mutated_child2)
-        print(decoded_population)
+        # print(f'population: {population}\n')
 
-        # Fitness Calculation
-        fitness_of_population = fitnessCalculation(decoded_population)
-        print(fitness_of_population)
 
-        # Parent Selection
-        # parent1, parent2 = parentSelection(fitness_of_population, population)
-        # print(parent1, parent2)
+        if max(fitnessCalculation(decodeChromosomeToIndividual(population))) > best_fitness:
+            best_fitness = max(fitnessCalculation(decodeChromosomeToIndividual(population)))
+            best_individual = population[fitness_of_population.index(max(fitness_of_population))]
+            change_credit = 0
 
-        # # Recombination
-        # child1, child2 = recombination(parent1,parent2)
+        os.system("cls")
         
-        # # permutation
-        # mutated_child1, mutated_child2 = mutation(child1, child2)
+        print(f'Generation : {generation}\n')
+        print(f'BEST INDIVIDUAL')
+        print(f'x1 : {best_individual[:CHROMOSOME_LENGTH//2]}')
+        print(f'x2 : {best_individual[CHROMOSOME_LENGTH//2:]}\n')
+        print(f'BEST FITNESS: {best_fitness}\n')
 
-        # # Exchange Population
-        # population = exchangePopulation(population, fitness_of_population, mutated_child1, mutated_child2)
-
-        # if best_fitness < max(fitnessCalculation(population)):
-        #     best_fitness = max(fitnessCalculation(population))
-        #     best_individual = population[fitness_of_population.index(max(fitness_of_population))]
-        #     change_credit = 0
-
-        # os.system('cls')
-        # print(f'Generation : {generation}\n')
-        # print(f'BEST INDIVIDUAL')
-        # print(f'x1 : {best_individual[0]}')
-        # print(f'x2 : {best_individual[1]}\n')
-        # print(f'BEST FITNESS: {best_fitness}\n')
-
-        # change_credit += 1
-        # generation += 1
-
-        break
+        change_credit += 1
+        generation += 1
+    
+    print("Finished")
 
 main()

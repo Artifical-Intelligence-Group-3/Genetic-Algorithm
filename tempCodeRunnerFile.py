@@ -1,8 +1,4 @@
-import math
-import random
-import os
-
-def decodeChromosomeToIndividual(population):
-    alpha = 0.0
-    beta_x1 = 0.0
-    beta_x2 = 0.0
+if max(fitnessCalculation(decodeChromosomeToIndividual(population))) > best_fitness:
+            best_fitness = max(fitnessCalculation(decodeChromosomeToIndividual(population)))
+            best_individual = population[fitness_of_population.index(max(fitness_of_population))]
+            change_credit = 0
