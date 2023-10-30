@@ -1,1 +1,1 @@
-population
+os.system('cls')
