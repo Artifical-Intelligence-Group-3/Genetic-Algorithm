@@ -12,29 +12,71 @@ def initializePopulation():
     return population
 
 def fitnessCalculation(decoded_population):
-    return
+    fitness_of_population = []
+    a = 0.01
+    for individual in decoded_population:
+        x1 = individual[0]
+        x2 = individual[1]
+        fitness_of_population.append(1/(-(math.sin(x1) * - math.cos(x2) + 4/5 * math.exp(1 - (x1**2 + x2 ** 2) ** 0.5))) + a)
+    return fitness_of_population
 
 def decodeChromosomeToIndividual(population):
 
     #Real Decoder from [0,1] Interval to [-10,-10] Interval
-    return 
+
+    decoded_population = []
+    for chromosome in population:
+        x1 = LOWER_LIMIT + (UPPER_LIMIT - LOWER_LIMIT) * chromosome[0]
+        x2 = LOWER_LIMIT + (UPPER_LIMIT - LOWER_LIMIT) * chromosome[1]
+        decoded_population.append((x1,x2))
+    return decoded_population
 
 def parentSelection(fitness_of_population, population):
-    return 
+    sorted_fitness = sorted(fitness_of_population)
 
+    #Collect 2 largest fitness point i population
+
+    return population[fitness_of_population.index(sorted_fitness[-1])], population[fitness_of_population.index(sorted_fitness[-2])]
 
 def recombination(parent1, parent2):
 
     #Recombination using single arithmetic crossover
-    return
+
+    alpha = random.uniform(0,1) #Random alpha value interval [0,1] in real number
+    gen =  random.randint(0,1)
     
+    #if the gen is 1 then change the second chromosome only else change the first one only
+    if gen == 1:
+        return (parent1[0], alpha * parent2[gen] + (1 - alpha) * parent1[gen]), (parent2[0], alpha * parent1[gen] + (1 - alpha) * parent2[gen])
+    else:
+        return (alpha * parent1[gen] + (1 - alpha) * parent2[gen], parent1[1]), (alpha * parent2[gen] + (1 - alpha) * parent1[gen], parent2[1])
+
 def mutation(child1, child2):
     
     # Uniform Mutation
-    return
+
+    list_of_child = [list(child1), list(child2)]
+
+    for child in list_of_child:
+        child[random.randint(0,1)] = random.uniform(0,1)
+
+    return tuple(list_of_child[0]), tuple(list_of_child[1])
 
 def exchangePopulation(population, fitness_of_population, child1, child2):
-    return
+    new_population = population
+    new_generation = [child1, child2]
+    decoded_new_generation = decodeChromosomeToIndividual(new_generation)
+    fitness_of_new_generation = fitnessCalculation(decoded_new_generation)
+
+    sorted_population_fitness = sorted(fitness_of_population)
+
+    for i in range (0, 2, 1):
+        for j in range(-1, -POPULATION_SIZE - 1, -1):
+            if sorted_population_fitness[j] < fitness_of_new_generation[i]:
+                new_population[fitness_of_population.index(sorted_population_fitness[j])] = new_generation[i]
+                break
+            
+    return new_population
 
 
 
