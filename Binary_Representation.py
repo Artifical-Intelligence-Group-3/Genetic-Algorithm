@@ -20,11 +20,41 @@ def fitnessCalculation(decoded_population):
         fitness_of_population.append(-1/(-(math.sin(x1) * - math.cos(x2) + (4/5) * math.exp(1 - (x1**2 + x2 ** 2) ** 0.5)) + a) )
     return fitness_of_population
 
-def parentSelection(fitness_of_population, population):
-    sorted_fitness = sorted(fitness_of_population)
+def window_scaling(fitness_values):
+    # Apply linear scaling to each fitness value
+    scaled_fitness = [fitness - MIN_FITNESS_VALUE for fitness in fitness_values]
+    
+    return scaled_fitness
 
-    # collect 2 largest fitness  
-    return population[fitness_of_population.index(sorted_fitness[-1])], population[fitness_of_population.index(sorted_fitness[-2])]
+def parentSelection(fitness_of_population, population):
+
+    # Fitness Prortionate Selection (FPS)
+    # Stochastic Universal Sampling Algorithm
+
+    pointers = []
+    expectation_parent_value = []
+    
+    fitness_of_population = window_scaling(fitness_of_population) # Window Scaling
+
+    max_fitness = sum(fitness_of_population)    
+    spin_value = random.uniform(0,max_fitness)
+
+
+    #Spin the wheel
+    for i in range(1, POPULATION_SIZE + 1):
+        pointers.append(((i * max_fitness/4) + spin_value) % max_fitness)
+        expectation_parent_value.append(0) 
+
+
+    #Count how many pointer which point to the each individual in  population
+    for i in range(0, POPULATION_SIZE):
+        for j in range(0, POPULATION_SIZE):
+            if pointers[i] <= sum(fitness_of_population[0:(j + 1)]):
+                expectation_parent_value[j] += 1
+                break
+    sorted_expectation_parent_value = sorted(expectation_parent_value)
+
+    return(population[expectation_parent_value.index(sorted_expectation_parent_value[-1])] , population[expectation_parent_value.index(sorted_expectation_parent_value[-2])])
 
 def decodeChromosomeToIndividual(population):
     alpha = 0.0
@@ -49,7 +79,7 @@ def recombination(parent1,parent2):
     child2 = ""
     
     for i in range(CHROMOSOME_LENGTH):
-        if random.uniform(0,1) < 0.6:
+        if random.uniform(0,1) < POSSIBLE_COMBINATION:
             child1 += parent1[i]
             child2 += parent2[i]
         else:
@@ -59,6 +89,8 @@ def recombination(parent1,parent2):
     return child1, child2
 
 def mutation(child1, child2):
+
+    # Mutasi Biner
 
     mutated_child_list = [list(child1), list(child2)] # Convert the strings to lists
 
@@ -75,30 +107,37 @@ def mutation(child1, child2):
     return mutated_child1, mutated_child2          
 
 def exchangePopulation(population, fitness_of_population, child1, child2):
+
+    #Steady State Model
+
     new_population = population
     new_generation = [child1, child2]
     fitness_of_new_generation = fitnessCalculation(decodeChromosomeToIndividual(new_generation))
-    sorted_fitness_of_old_population = sorted(fitness_of_population)
+    sorted_2_worst_fitness_of_old_generation = sorted(fitness_of_population)[0:2]
 
     for i in range(2):
-        for j in range(-1, -POPULATION_SIZE - 1, -1):
-            if fitness_of_new_generation[i] > sorted_fitness_of_old_population[j]:
-                new_population[fitness_of_population.index(sorted_fitness_of_old_population[j])] = new_generation[i]
+        for j in range(2):
+            if fitness_of_new_generation[i] > sorted_2_worst_fitness_of_old_generation[j]:
+                new_population[fitness_of_population.index(sorted_2_worst_fitness_of_old_generation[j])] = new_generation[i]
+                fitness_of_population[fitness_of_population.index(sorted_2_worst_fitness_of_old_generation[j])] = fitness_of_new_generation[i]
+                sorted_2_worst_fitness_of_old_generation[j] = fitness_of_new_generation[i]
+                sorted_2_worst_fitness_of_old_generation.sort()
                 break
 
     return new_population
 
 
 def main():
-    global LOWER_LIMIT, UPPER_LIMIT, POPULATION_SIZE, CHROMOSOME_LENGTH, POSSIBLE_MUTATION, POSSIBLE_COMBINATION
+    global LOWER_LIMIT, UPPER_LIMIT, POPULATION_SIZE, CHROMOSOME_LENGTH, POSSIBLE_MUTATION, POSSIBLE_COMBINATION,  MIN_FITNESS_VALUE
     LOWER_LIMIT = -10
     UPPER_LIMIT = 10
-    POPULATION_SIZE = 1000
-    CHROMOSOME_LENGTH = 200
+    POPULATION_SIZE = 100
+    CHROMOSOME_LENGTH = 50
     POSSIBLE_MUTATION = 1 / (POPULATION_SIZE * CHROMOSOME_LENGTH)
     POSSIBLE_COMBINATION =  0.6
+    MIN_FITNESS_VALUE = 1.97
 
-    limitation_of_change = 100
+    limitation_of_change = 1000
     change_credit = 0
     generation = 0
     best_fitness = float('-inf')
@@ -108,7 +147,6 @@ def main():
 
     while change_credit <= limitation_of_change:
         # print(f'population: {population}\n')
-
         # Decode Cromosom to individual
         decoded_population = decodeChromosomeToIndividual(population)
         # print(f'decoded_population: {decoded_population}\n')
@@ -133,6 +171,7 @@ def main():
         population = exchangePopulation(population, fitness_of_population, mutated_child1, mutated_child2)
         # print(f'population: {population}\n')
 
+        MIN_FITNESS_VALUE = min(fitness_of_population)
 
         if max(fitnessCalculation(decodeChromosomeToIndividual(population))) > best_fitness:
             best_fitness = max(fitnessCalculation(decodeChromosomeToIndividual(population)))
@@ -146,6 +185,8 @@ def main():
         print(f'x1 : {best_individual[:CHROMOSOME_LENGTH//2]}')
         print(f'x2 : {best_individual[CHROMOSOME_LENGTH//2:]}\n')
         print(f'BEST FITNESS: {best_fitness}\n')
+
+        
 
         change_credit += 1
         generation += 1
