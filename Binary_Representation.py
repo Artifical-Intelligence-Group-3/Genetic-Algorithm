@@ -39,7 +39,7 @@ def decodeChromosomeToIndividual(population):
             beta_x2 += int(chromosome[i + CHROMOSOME_LENGTH//2 - 1]) * 2**(-(i + 1))
         decoded_population.append((LOWER_LIMIT + (UPPER_LIMIT - LOWER_LIMIT) / alpha * beta_x1, LOWER_LIMIT + (UPPER_LIMIT - LOWER_LIMIT) / alpha * beta_x2))
     
-    return decoded_population #Rumus Sesuai Buku
+    return decoded_population
 
 def recombination(parent1,parent2):
     
@@ -49,7 +49,7 @@ def recombination(parent1,parent2):
     child2 = ""
     
     for i in range(CHROMOSOME_LENGTH):
-        if random.randint(0,1) == 0:
+        if random.uniform(0,1) < 0.6:
             child1 += parent1[i]
             child2 += parent2[i]
         else:
@@ -90,12 +90,13 @@ def exchangePopulation(population, fitness_of_population, child1, child2):
 
 
 def main():
-    global LOWER_LIMIT, UPPER_LIMIT, POPULATION_SIZE, CHROMOSOME_LENGTH, POSSIBLE_MUTATION
+    global LOWER_LIMIT, UPPER_LIMIT, POPULATION_SIZE, CHROMOSOME_LENGTH, POSSIBLE_MUTATION, POSSIBLE_COMBINATION
     LOWER_LIMIT = -10
     UPPER_LIMIT = 10
     POPULATION_SIZE = 1000
     CHROMOSOME_LENGTH = 200
     POSSIBLE_MUTATION = 1 / (POPULATION_SIZE * CHROMOSOME_LENGTH)
+    POSSIBLE_COMBINATION =  0.6
 
     limitation_of_change = 100
     change_credit = 0

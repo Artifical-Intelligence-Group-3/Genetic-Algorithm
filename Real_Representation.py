@@ -17,7 +17,7 @@ def fitnessCalculation(decoded_population):
     for individual in decoded_population:
         x1 = individual[0]
         x2 = individual[1]
-        fitness_of_population.append(1/(-(math.sin(x1) * - math.cos(x2) + 4/5 * math.exp(1 - (x1**2 + x2 ** 2) ** 0.5))) + a)
+        fitness_of_population.append(1/((-(math.sin(x1) * - math.cos(x2) + 4/5 * math.exp(1 - (x1**2 + x2 ** 2) ** 0.5))) + a))
     return fitness_of_population
 
 def decodeChromosomeToIndividual(population):
